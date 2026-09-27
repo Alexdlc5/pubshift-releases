@@ -1,0 +1,23 @@
+# Checks pubshiftapp.com every 30 minutes; a failed run emails the repo owner (GitHub notifications).
+# Lives in this public repo because scheduled checks are free here.
+name: uptime
+on:
+  schedule: [{ cron: "*/30 * * * *" }]
+  workflow_dispatch:
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Site and free converter respond
+        run: |
+          for url in https://pubshiftapp.com/healthz https://pubshiftapp.com/ https://pubshiftapp.com/sitemap.xml; do
+            ok=
+            for try in 1 2 3; do  # the site may be waking up from idle
+              if curl -fsS -o /dev/null --max-time 30 "$url"; then ok=1; break; fi
+              sleep 20
+            done
+            [ -n "$ok" ] || { echo "::error::$url is not responding"; exit 1; }
+          done
+          echo "all good"
